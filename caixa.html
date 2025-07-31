@@ -1,0 +1,177 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Caixa</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f9f9f9;
+    }
+    h1, h2, h3 {
+      text-align: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background-color: #eee;
+    }
+    .totais {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 20px;
+      font-weight: bold;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    button {
+      margin: 10px;
+      padding: 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h2>Usuário: <span id="usuario"></span></h2>
+  <h3>Hora: <span id="hora"></span></h3>
+  <hr>
+
+  <div class="totais">
+    <div>SALDO ANTERIOR: R$ <span id="saldoAnterior">0.00</span></div>
+    <div>APURADO: R$ <span id="apurado">0.00</span></div>
+    <div>DESPESAS: R$ <span id="despesas">0.00</span></div>
+    <div>SALDO FINAL: R$ <span id="saldoFinal">0.00</span></div>
+  </div>
+  <hr>
+
+  <h3>RESUMO</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Data do Sorteio</th>
+        <th>Vendedor</th>
+        <th>Vendeu</th>
+        <th>Apurou</th>
+        <th>Pagou</th>
+        <th>Deve</th>
+      </tr>
+    </thead>
+    <tbody id="corpoResumo"></tbody>
+  </table>
+
+  <hr>
+  <h3>DESPESAS</h3>
+  <table>
+    <thead>
+      <tr><th>Descrição</th><th>Valor</th></tr>
+    </thead>
+    <tbody id="tabelaDespesas"></tbody>
+  </table>
+
+  <hr>
+  <button onclick="exportarPDF()">Exportar PDF</button>
+  <button onclick="zerarCaixa()">Zerar Caixa</button>
+
+  <script>
+    // Exibir usuário logado
+    document.getElementById("usuario").innerText = localStorage.getItem("usuarioLogado") || "-";
+
+    // Atualizar relógio
+    setInterval(() => {
+      const agora = new Date();
+      document.getElementById("hora").innerText = agora.toLocaleTimeString();
+    }, 1000);
+
+    const corpoResumo = document.getElementById("corpoResumo");
+    const tabelaDespesas = document.getElementById("tabelaDespesas");
+
+    // Buscar receitas do localStorage - array valorReceitas
+    const receitas = JSON.parse(localStorage.getItem("valorReceitas") || "[]");
+    let saldoAnterior = 0;
+    receitas.forEach(r => {
+      saldoAnterior += parseFloat(r.valor) || 0;
+    });
+
+    let apuradoTotal = 0;
+    let despesasTotal = 0;
+
+    document.getElementById("saldoAnterior").innerText = saldoAnterior.toFixed(2);
+
+    // Buscar vendedores e vendas
+    const vendedores = JSON.parse(localStorage.getItem("vendedores") || "[]");
+
+    vendedores.forEach((v, index) => {
+      // Considerar que o id pode ser o índice, ou se tiver campo id usar ele
+      const id = v.id !== undefined ? v.id : index;
+      const vendas = JSON.parse(localStorage.getItem(`vendas_${id}`) || "[]");
+
+      vendas.forEach(linha => {
+        const apurou = parseFloat(linha.apurou) || 0;
+        const pagou = parseFloat(linha.pagou) || 0;
+        const vendeu = parseInt(linha.vendeu) || 0;
+        const deve = apurou - pagou;
+
+        apuradoTotal += apurou;
+
+        corpoResumo.innerHTML += `
+          <tr>
+            <td>${linha.data || "-"}</td>
+            <td>${v.nome}</td>
+            <td>${vendeu}</td>
+            <td>R$ ${apurou.toFixed(2)}</td>
+            <td>R$ ${pagou.toFixed(2)}</td>
+            <td>R$ ${deve.toFixed(2)}</td>
+          </tr>
+        `;
+      });
+    });
+
+    document.getElementById("apurado").innerText = apuradoTotal.toFixed(2);
+
+    // Buscar despesas
+    const despesas = JSON.parse(localStorage.getItem("despesas") || "[]");
+    despesas.forEach(d => {
+      const valor = parseFloat(d.valor) || 0;
+      despesasTotal += valor;
+      tabelaDespesas.innerHTML += `<tr><td>${d.descricao}</td><td>R$ ${valor.toFixed(2)}</td></tr>`;
+    });
+
+    document.getElementById("despesas").innerText = despesasTotal.toFixed(2);
+
+    // Calcular saldo final
+    const saldoFinal = saldoAnterior + apuradoTotal - despesasTotal;
+    document.getElementById("saldoFinal").innerText = saldoFinal.toFixed(2);
+
+    // Exportar PDF (simples, pelo print)
+    function exportarPDF() {
+      window.print();
+    }
+
+    // Zerar caixa (remover vendas, receitas e despesas)
+    function zerarCaixa() {
+      if (confirm("Deseja realmente zerar o caixa? Isso apagará receitas, despesas e histórico de vendas.")) {
+        localStorage.removeItem("valorReceitas"); // Agora é valorReceitas
+        localStorage.removeItem("despesas");
+
+        const vendedores = JSON.parse(localStorage.getItem("vendedores") || "[]");
+        vendedores.forEach((v, index) => {
+          const id = v.id !== undefined ? v.id : index;
+          localStorage.removeItem(`vendas_${id}`);
+        });
+
+        alert("Caixa zerado!");
+        location.reload();
+      }
+    }
+  </script>
+</body>
+</html>

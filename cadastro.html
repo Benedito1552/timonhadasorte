@@ -1,0 +1,104 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cadastro de Vendedores</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    h1 { margin-bottom: 10px; }
+    input, button { margin: 5px 0; padding: 8px; width: 100%; max-width: 300px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background-color: #eee; }
+    .btn { padding: 5px 10px; margin: 2px; cursor: pointer; }
+    .btn:hover { opacity: 0.8; }
+  </style>
+</head>
+<body>
+
+  <h1>Cadastro de Vendedores</h1>
+
+  <form id="formCadastro">
+    <input type="text" id="vendedor" placeholder="Nome do Vendedor" required>
+    <input type="text" id="localidade" placeholder="Localidade" required>
+    <input type="number" step="0.01" id="cotacao" placeholder="Cotação (ex: 2.50)" required>
+    <button type="submit">Cadastrar Vendedor</button>
+  </form>
+
+  <hr>
+
+  <h2>Lista de Vendedores</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Localidade</th>
+        <th>Cotação</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody id="tabelaVendedores"></tbody>
+  </table>
+
+  <script>
+    const form = document.getElementById('formCadastro');
+    const tabela = document.getElementById('tabelaVendedores');
+    let vendedores = JSON.parse(localStorage.getItem('vendedores') || '[]');
+
+    function salvarVendedores() {
+      localStorage.setItem('vendedores', JSON.stringify(vendedores));
+      renderizarTabela();
+    }
+
+    function renderizarTabela() {
+      tabela.innerHTML = "";
+      vendedores.forEach((vend, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><a href="vendas.html?vendedor=${index}">${vend.nome}</a></td>
+          <td>${vend.localidade}</td>
+          <td>R$ ${Number(vend.cotacao).toFixed(2)}</td>
+          <td>
+            <button class="btn" onclick="editar(${index})">Editar</button>
+            <button class="btn" onclick="excluir(${index})">Excluir</button>
+          </td>
+        `;
+        tabela.appendChild(tr);
+      });
+    }
+
+    function editar(index) {
+      const vend = vendedores[index];
+      document.getElementById('vendedor').value = vend.nome;
+      document.getElementById('localidade').value = vend.localidade;
+      document.getElementById('cotacao').value = vend.cotacao;
+      vendedores.splice(index, 1); // Remove e deixa para regravar no submit
+    }
+
+    function excluir(index) {
+      if (confirm("Deseja excluir este vendedor?")) {
+        vendedores.splice(index, 1);
+        salvarVendedores();
+      }
+    }
+
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      const nome = document.getElementById('vendedor').value.trim();
+      const localidade = document.getElementById('localidade').value.trim();
+      const cotacao = parseFloat(document.getElementById('cotacao').value);
+
+      if (!nome || !localidade || isNaN(cotacao)) return alert("Preencha todos os campos corretamente.");
+
+      vendedores.push({ nome, localidade, cotacao });
+      salvarVendedores();
+
+      form.reset();
+    };
+
+    renderizarTabela();
+  </script>
+
+</body>
+</html>

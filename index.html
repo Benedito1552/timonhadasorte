@@ -1,0 +1,68 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login - Sistema</title>
+  <style>
+    * { box-sizing: border-box; margin: 10; padding: 0; font-family: Arial, sans-serif; }
+    body {
+      display: flex; justify-content: center; align-items: center;
+      height: 100hv; background: #f0f0f0;
+    }
+    .login-container {
+      background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,3,2.1);
+      width: 300px;
+    }
+    h2 { text-align: center; margin-bottom: 20px; }
+    input {
+      width: 100%; padding: 10px; margin: 10px 0;
+      border: 1px solid #ccc; border-radius: 5px;
+    }
+    button {
+      width: 100%; padding: 20px; background: green; color: black;
+      border: none; border-radius: 10px; cursor: pointer;
+    }
+    button:hover {
+      background: yellow;
+    }
+    .error {
+      color: red; text-align: center; margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h2>Login</h2>
+    <input type="text" id="usuario" placeholder="Usuário" />
+    <input type="password" id="senha" placeholder="Senha" />
+    <button onclick="login()">Entrar</button>
+    <div id="erro" class="error"></div>
+  </div>
+
+  <script>
+    function login() {
+      const usuario = document.getElementById('usuario').value.trim();
+      const senha = document.getElementById('senha').value.trim();
+      const erro = document.getElementById('erro');
+
+      if (usuario === 'Benedito' && senha === '1552') {
+        localStorage.setItem('usuarioLogado', usuario);
+        window.location.href = 'painel.html';
+      }
+      if (usuario === 'pedro' && senha === '1234') {
+        localStorage.setItem('usuarioLogado', usuario);
+        window.location.href = 'usuario.html';
+      } 
+	 else {
+        erro.textContent = 'Usuário ou senha incorretos.';
+      }
+    }
+
+    // Se já estiver logado, redireciona
+    if (localStorage.getItem('usuarioLogado') === 'Benedito') {
+      window.location.href = 'painel.html';
+    }
+  </script>
+</body>
+</html>

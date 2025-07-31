@@ -1,0 +1,96 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Backup do Sistema</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      background-color: #f7f7f7;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 16px;
+    }
+
+    input[type="file"] {
+      margin-top: 20px;
+    }
+
+    #mensagem {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Backup do Sistema</h1>
+
+  <button onclick="fazerBackup()">📦 Fazer Backup</button>
+  <br>
+  <input type="file" id="arquivoBackup" accept=".json">
+  <br>
+  <button onclick="restaurarBackup()">♻️ Restaurar Backup</button>
+
+  <div id="mensagem"></div>
+
+  <script>
+    // Função para exportar os dados
+    function fazerBackup() {
+      const dados = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const chave = localStorage.key(i);
+        dados[chave] = localStorage.getItem(chave);
+      }
+
+      const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup_${new Date().toISOString().slice(0, 19).replace(/[-:T]/g, "")}.json`;
+      a.click();
+
+      document.getElementById("mensagem").innerText = "Backup gerado com sucesso!";
+    }
+
+    // Função para restaurar o backup
+    function restaurarBackup() {
+      const input = document.getElementById('arquivoBackup');
+      const file = input.files[0];
+
+      if (!file) {
+        alert("Selecione um arquivo de backup.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        try {
+          const dados = JSON.parse(event.target.result);
+          localStorage.clear();
+
+          for (const chave in dados) {
+            localStorage.setItem(chave, dados[chave]);
+          }
+
+          document.getElementById("mensagem").innerText = "Backup restaurado com sucesso! Recarregando...";
+          setTimeout(() => location.reload(), 2000);
+        } catch (e) {
+          alert("Erro ao restaurar backup: arquivo inválido.");
+        }
+      };
+
+      reader.readAsText(file);
+    }
+  </script>
+</body>
+</html>

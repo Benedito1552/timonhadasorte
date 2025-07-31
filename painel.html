@@ -1,0 +1,98 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Painel de Controle</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; display: flex; height: 100vh; }
+    
+    .menu-lateral {
+      width: 250px;
+      background-color: #333;
+      color: white;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .menu-lateral h2 {
+      margin-bottom: 30px;
+      font-size: 20px;
+      text-align: center;
+    }
+
+    .menu-lateral a {
+      text-decoration: none;
+      color: white;
+      margin: 10px 0;
+      padding: 10px;
+      background-color: #444;
+      border-radius: 5px;
+      transition: background 0.3s;
+    }
+
+    .menu-lateral a:hover {
+      background-color: #666;
+    }
+
+    .conteudo {
+      flex: 1;
+      padding: 20px;
+    }
+
+    .cabecalho {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .hora {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="menu-lateral">
+    <h2>Painel Principal</h2>
+    <a href="cadastro.html">📋 Cadastro</a>
+    <a href="despesas.html">💸 Despesas</a>
+    <a href="receitas.html">💰 Receitas</a>
+    <a href="caixa.html">🧾 Caixa</a>
+    <a href="relatorio.html">📊 Relatório</a>
+    <a href="prestar.html">✅ Prestamento de Contas</a>
+    <a href="backup.html">🗃️ Backup</a>
+    <a href="#" onclick="logout()">🚪 Sair</a>
+  </div>
+
+  <div class="conteudo">
+    <div class="cabecalho">
+      <div>Usuário: <span id="usuarioLogado">Benedito</span></div>
+      <div class="hora" id="horaAtual"></div>
+    </div>
+
+    <h1>Bem-vindo ao sistema de vendas</h1>
+    <p>Use o menu à esquerda para navegar pelas funcionalidades.</p>
+  </div>
+
+  <script>
+    function atualizarHora() {
+      const agora = new Date();
+      const hora = agora.toLocaleTimeString('pt-BR');
+      document.getElementById("horaAtual").innerText = hora;
+    }
+    setInterval(atualizarHora, 1000);
+    atualizarHora();
+
+    function logout() {
+      localStorage.removeItem('usuarioLogado');
+      alert("Você saiu do sistema.");
+      window.location.href = "index.html"; // Página de login
+    }
+  </script>
+
+</body>
+</html>

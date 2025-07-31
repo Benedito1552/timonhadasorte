@@ -1,0 +1,224 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Relatório</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      text-align: center;
+    }
+
+    #usuario, #hora {
+      font-weight: bold;
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    hr {
+      margin: 20px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #f0f0f0;
+    }
+
+    .total-container {
+      margin-top: 20px;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: right;
+    }
+
+    .total {
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    .partilha {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    button {
+      margin-top: 30px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <span id="usuario"></span>
+  <span id="hora"></span>
+  <hr>
+  <h1>RELATÓRIO</h1>
+  <hr>
+
+  <!-- Totais (saldo, apurado, despesas, final) -->
+  <div class="total-container">
+    <div class="total">Saldo Anterior: R$ <span id="totalReceitas">0.00</span></div>
+    <div class="total">Apurado: R$ <span id="totalApurado">0.00</span></div>
+    <div class="total">Despesas: R$ <span id="totalDespesas">0.00</span></div>
+    <div class="total">Total Final: R$ <span id="totalFinal">0.00</span></div>
+  </div>
+
+  <hr>
+  <!-- Tabela de vendas -->
+  <h2>VENDAS</h2>
+  <table id="tabelaResumo">
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Vendedor</th>
+        <th>Vendeu</th>
+        <th>Apurou</th>
+        <th>Pagou</th>
+        <th>Deve</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <hr>
+  <!-- Tabela de despesas -->
+  <h2>DESPESAS</h2>
+  <table id="tabelaDespesas">
+    <thead>
+      <tr>
+        <th>Descrição</th>
+        <th>Valor</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <hr>
+  <!-- Partilha -->
+  <h2>PARTILHA DE RECURSOS</h2>
+  <div class="partilha">
+    <p>JUNIOR: R$ <span id="valorJunior">0.00</span></p>
+    <p>PEDRO: R$ <span id="valorPedro">0.00</span></p>
+  </div>
+
+  <button onclick="gerarPDF()">Gerar PDF</button>
+
+  <script>
+    // Atualiza usuário logado
+    const usuario = localStorage.getItem('usuarioLogado') || 'Usuário';
+    document.getElementById('usuario').textContent = `Usuário: ${usuario}`;
+
+    // Relógio
+    function atualizarHora() {
+      const agora = new Date();
+      document.getElementById('hora').textContent = `Hora: ${agora.toLocaleTimeString("pt-BR")}`;
+    }
+    setInterval(atualizarHora, 1000);
+    atualizarHora();
+
+    // Função principal de carregamento de dados
+    function carregarDados() {
+      const vendedores = JSON.parse(localStorage.getItem("vendedores") || "[]");
+      const tbodyResumo = document.querySelector("#tabelaResumo tbody");
+      tbodyResumo.innerHTML = "";
+
+      let totalApurado = 0;
+      let totalDespesas = 0;
+      let totalReceitas = 0;
+
+      // Receitas
+      const receitas = JSON.parse(localStorage.getItem("valorReceitas") || "[]");
+      if (Array.isArray(receitas)) {
+        receitas.forEach(r => {
+          totalReceitas += parseFloat(r.valor || 0);
+        });
+      }
+
+      // Vendas por vendedor
+      vendedores.forEach((vendedor, i) => {
+        const vendas = JSON.parse(localStorage.getItem("vendas_" + i) || "[]");
+        if (!Array.isArray(vendas)) return;
+
+        vendas.forEach(v => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${v.data || ""}</td>
+            <td>${vendedor.nome || ""}</td>
+            <td>${parseInt(v.vendeu) || 0}</td>
+            <td>${parseFloat(v.apurou).toFixed(2) || "0.00"}</td>
+            <td>${parseFloat(v.pagou).toFixed(2) || "0.00"}</td>
+            <td>${parseFloat(v.deve).toFixed(2) || "0.00"}</td>
+          `;
+          tbodyResumo.appendChild(tr);
+          totalApurado += parseFloat(v.apurou) || 0;
+        });
+      });
+
+      // Despesas
+      const despesas = JSON.parse(localStorage.getItem("despesas") || "[]");
+      const tbodyDespesas = document.querySelector("#tabelaDespesas tbody");
+      tbodyDespesas.innerHTML = "";
+      if (Array.isArray(despesas)) {
+        despesas.forEach(d => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${d.descricao || ""}</td>
+            <td>${parseFloat(d.valor).toFixed(2) || "0.00"}</td>
+          `;
+          tbodyDespesas.appendChild(tr);
+          totalDespesas += parseFloat(d.valor) || 0;
+        });
+      }
+
+      const totalFinal = totalReceitas + totalApurado - totalDespesas;
+
+      // Atualiza valores
+      document.getElementById("totalReceitas").textContent = totalReceitas.toFixed(2);
+      document.getElementById("totalApurado").textContent = totalApurado.toFixed(2);
+      document.getElementById("totalDespesas").textContent = totalDespesas.toFixed(2);
+      document.getElementById("totalFinal").textContent = totalFinal.toFixed(2);
+
+      // Partilha
+      const valorJunior = totalFinal > 0 ? (totalFinal * 0.10) : 0;
+      const valorPedro = totalFinal > 0 ? (totalFinal * 0.90) : 0;
+
+      document.getElementById("valorJunior").textContent = valorJunior.toFixed(2);
+      document.getElementById("valorPedro").textContent = valorPedro.toFixed(2);
+    }
+
+    carregarDados();
+
+    async function gerarPDF() {
+      const { jsPDF } = window.jspdf;
+      const canvas = await html2canvas(document.body, { scale: 2 });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "pt", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const imgHeight = canvas.height * pageWidth / canvas.width;
+
+      pdf.addImage(imgData, "PNG", 0, 0, pageWidth, imgHeight);
+      pdf.save("relatorio.pdf");
+    }
+  </script>
+
+  <!-- Bibliotecas PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</body>
+</html>

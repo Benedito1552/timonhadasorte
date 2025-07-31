@@ -1,0 +1,169 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Histórico de Vendas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+    th { background-color: #f0f0f0; }
+    input { width: 100%; box-sizing: border-box; padding: 4px; }
+    button { margin: 5px; padding: 8px 12px; }
+    hr { margin: 20px 0; }
+    .topo { display: flex; justify-content: space-between; }
+  </style>
+</head>
+<body>
+
+  <div class="topo">
+    <div><strong>Usuário:</strong> <span id="usuario">Benedito</span></div>
+    <div><strong>Hora:</strong> <span id="hora"></span></div>
+  </div>
+
+  <hr>
+
+  <div>
+    <strong>Nome:</strong> <span id="nomeVendedor"></span><br>
+    <strong>Localidade:</strong> <span id="localidadeVendedor"></span>
+  </div>
+
+  <hr>
+
+  <h2>Histórico de Vendas</h2>
+  <table id="tabelaVendas">
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Anterior</th>
+        <th>Final</th>
+        <th>Recebeu</th>
+        <th>Devolveu</th>
+        <th>Vendeu</th>
+        <th>Apurou</th>
+        <th>Pagou</th>
+        <th>Deve</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <button onclick="adicionarLinha()">➕ Adicionar Linha</button>
+  <button onclick="salvar()">💾 Salvar Vendas</button>
+  <button onclick="limpar()">🧹 Limpar Vendas</button>
+  <button onclick="exportarPDF()">📄 Exportar PDF</button>
+
+  <!-- jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+  <script>
+    const vendedorIndex = new URLSearchParams(location.search).get("vendedor");
+    let vendedores = JSON.parse(localStorage.getItem("vendedores") || "[]");
+    let vendas = JSON.parse(localStorage.getItem("vendas_" + vendedorIndex) || "[]");
+
+    if (!Array.isArray(vendas)) vendas = [];
+
+    const vendedor = vendedores[vendedorIndex];
+    const cotacao = parseFloat(vendedor.cotacao);
+
+    document.getElementById("nomeVendedor").innerText = vendedor.nome;
+    document.getElementById("localidadeVendedor").innerText = vendedor.localidade;
+
+    function atualizarHora() {
+      const agora = new Date();
+      document.getElementById("hora").innerText = agora.toLocaleTimeString("pt-BR");
+    }
+    setInterval(atualizarHora, 1000);
+    atualizarHora();
+
+    const tabela = document.querySelector("#tabelaVendas tbody");
+
+    function renderizarTabela() {
+      tabela.innerHTML = "";
+      vendas.forEach((v, index) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><input value="${v.data || ""}" onchange="atualizar(${index}, 'data', this.value)"></td>
+          <td><input type="number" value="${v.anterior || ""}" onchange="atualizar(${index}, 'anterior', this.value); calcular(${index})"></td>
+          <td><input type="number" value="${v.final || ""}" onchange="atualizar(${index}, 'final', this.value); calcular(${index})"></td>
+          <td><input type="number" value="${v.recebeu || ""}" readonly></td>
+          <td><input type="number" value="${v.devolveu || ""}" onchange="atualizar(${index}, 'devolveu', this.value); calcular(${index})"></td>
+          <td><input type="number" value="${v.vendeu || ""}" readonly></td>
+          <td><input type="number" step="0.01" value="${formatar(v.apurou)}" readonly></td>
+          <td><input type="number" step="0.01" value="${v.pagou || ""}" onchange="atualizar(${index}, 'pagou', this.value); calcular(${index})"></td>
+          <td><input type="number" step="0.01" value="${formatar(v.deve)}" readonly></td>
+          <td><button onclick="remover(${index})">❌</button></td>
+        `;
+        tabela.appendChild(tr);
+      });
+    }
+
+    function atualizar(index, campo, valor) {
+      vendas[index][campo] = valor;
+    }
+
+    function calcular(index) {
+      const v = vendas[index];
+      const anterior = parseInt(v.anterior) || 0;
+      const final = parseInt(v.final) || 0;
+      const devolveu = parseInt(v.devolveu) || 0;
+      const pagou = parseFloat(v.pagou) || 0;
+
+      v.recebeu = final - anterior;
+      v.vendeu = v.recebeu - devolveu;
+      v.apurou = v.vendeu * cotacao;
+      v.deve = v.apurou - pagou;
+
+      // Apenas atualiza a linha renderizada
+      renderizarTabela();
+    }
+
+    function formatar(valor) {
+      return isNaN(valor) ? "" : parseFloat(valor).toFixed(2);
+    }
+
+    function adicionarLinha() {
+      vendas.push({
+        data: "", anterior: "", final: "", recebeu: "", devolveu: "",
+        vendeu: "", apurou: "", pagou: "", deve: ""
+      });
+      renderizarTabela();
+    }
+
+    function remover(index) {
+      vendas.splice(index, 1);
+      renderizarTabela();
+    }
+
+    function salvar() {
+      localStorage.setItem("vendas_" + vendedorIndex, JSON.stringify(vendas));
+      alert("Vendas salvas!");
+    }
+
+    function limpar() {
+      if (confirm("Deseja apagar todo o histórico de vendas deste vendedor?")) {
+        vendas = [];
+        salvar();
+        renderizarTabela();
+      }
+    }
+
+    async function exportarPDF() {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF("p", "pt", "a4");
+      const canvas = await html2canvas(document.body, { scale: 2 });
+      const imgData = canvas.toDataURL("image/png");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const imgHeight = canvas.height * pageWidth / canvas.width;
+
+      pdf.addImage(imgData, "PNG", 0, 0, pageWidth, imgHeight);
+      pdf.save("vendas_" + vendedor.nome + ".pdf");
+    }
+
+    renderizarTabela();
+  </script>
+</body>
+</html>

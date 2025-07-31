@@ -1,0 +1,90 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Prestar Contas</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      background-color: #f4f4f4;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    input[type="password"] {
+      padding: 10px;
+      font-size: 16px;
+      margin: 10px;
+      width: 250px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-top: 15px;
+    }
+
+    .mensagem {
+      margin-top: 20px;
+      font-weight: bold;
+      color: green;
+    }
+
+    .erro {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <h1>Prestar Contas</h1>
+  <p>Para resetar o sistema (exceto os vendedores), digite a senha:</p>
+
+  <input type="password" id="senha" placeholder="Digite a senha de admin">
+  <br>
+  <button onclick="resetarSistema()">Zerar Sistema</button>
+
+  <div class="mensagem" id="mensagem"></div>
+
+  <script>
+    function resetarSistema() {
+      const senha = document.getElementById("senha").value;
+      const msg = document.getElementById("mensagem");
+      msg.innerText = "";
+      msg.classList.remove("erro");
+
+      if (senha !== "admin12345") {
+        msg.innerText = "Senha incorreta!";
+        msg.classList.add("erro");
+        return;
+      }
+
+      // Manter vendedores, mas apagar os dados de vendas
+      const vendedores = JSON.parse(localStorage.getItem("vendedores") || "[]");
+      vendedores.forEach((v, index) => {
+        const id = v.id || index;
+        localStorage.removeItem(`vendas_${id}`);
+      });
+
+      // Remover receitas e despesas
+      localStorage.removeItem("saldoAnterior");
+      localStorage.removeItem("descricaoReceita");
+      localStorage.removeItem("dataReceita");
+      localStorage.removeItem("despesas");
+
+      // Opcionalmente, também zere receitas totalizadas se existirem
+      localStorage.removeItem("receitaTotal");
+
+      msg.innerText = "Sistema resetado com sucesso!";
+      msg.classList.remove("erro");
+
+      setTimeout(() => {
+        location.reload();
+      }, 2000);
+    }
+  </script>
+</body>
+</html>
