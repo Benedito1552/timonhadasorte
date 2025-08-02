@@ -114,6 +114,7 @@
   <h2>PARTILHA DE RECURSOS</h2>
   <div class="partilha">
     <p>JUNIOR: R$ <span id="valorJunior">0.00</span></p>
+ <p>JOSE: R$ <span id="valorJose">0.00</span></p>
     <p>PEDRO: R$ <span id="valorPedro">0.00</span></p>
   </div>
 
@@ -195,10 +196,13 @@
       document.getElementById("totalFinal").textContent = totalFinal.toFixed(2);
 
       // Partilha
-      const valorJunior = totalFinal > 0 ? (totalFinal * 0.10) : 0;
-      const valorPedro = totalFinal > 0 ? (totalFinal * 0.90) : 0;
+      const valorJunior = totalFinal > 0 ? (totalFinal * 0.25) : 0;
+      const valorJose = totalFinal > 0 ? (totalFinal * 0.25) : 0;
+
+      const valorPedro = totalFinal > 0 ? (totalFinal * 0.50) : 0;
 
       document.getElementById("valorJunior").textContent = valorJunior.toFixed(2);
+      document.getElementById("valorJose").textContent = valorJose.toFixed(2);
       document.getElementById("valorPedro").textContent = valorPedro.toFixed(2);
     }
 
@@ -222,3 +226,4 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </body>
 </html>
+
